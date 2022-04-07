@@ -20,8 +20,29 @@ options(scipen = 100)
 
 # locate the data and import it
 setwd("/Users/gorkem.er/Desktop/21Projects/background-motion/Data_analysis")
-d = read.csv("bgmdata.csv",header=TRUE, quote="\"") 
+bgmdata = read.csv("bgmdata.csv",header=TRUE, quote="\"") 
 
+# replicate fgm analyses, response error
+
+# normal multiple regression model
+m1 <- lm(response_error ~ cuedAR, data = bgmdata)
+summary(m1)
+
+m2 <- lm(response_error ~ cuedAR + uncuedAR * as.factor(sameDirection1S0D_R2), data = bgmdata)
+summary(m2)
+anova(m2)
+
+m3 <- lm(response_error ~ cuedAR + uncuedAR * sameDirection1S0D *global_org1W0B, data = bgmdata)
+summary(m3)
+anova(m3)
+
+m4 <- lm(response_error ~ cuedAR + uncuedAR * sameDirection1S0D *global_org1W0B *sameCatS1D0, data = bgmdata)
+summary(m4)
+
+
+
+
+#### BELOW IS THE HISTORICAL ANALYSES SCRIPTS ####
 test = data
 # run ANOVA for multiple groups #
 test.aov <- aov(respError ~ motion_L, data = test)
