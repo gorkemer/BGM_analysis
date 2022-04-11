@@ -40,6 +40,33 @@ m4 <- lm(response_error ~ cuedAR + uncuedAR * sameDirection1S0D *global_org1W0B 
 summary(m4)
 
 
+plotREF_GO(bgmdata, bgmdata$response_error, bgmdata$uncuedAR, bgmdata$sameDirection1S0D)
+
+scatterPlot <- ggplot(bgmdata, aes(x = uncuedAR, y = response_error, colour=as.factor(sameDirection1S0D))) + 
+  geom_point(shape=11, size=0.5, alpha=0.05, show.legend = FALSE) +
+  #geom_density_2d(color="gray", alpha=0.3) + 
+  coord_cartesian(ylim=c(-0.5, 0.5))+
+  theme(legend.key.size = unit(0.2, "cm")) + 
+  geom_smooth(method = "lm", span = 0.1, alpha= 0.2,
+              aes(color = as.factor(sameDirection1S0D))) +
+  geom_segment(aes(x=min(unique(uncuedAR)),xend=max(unique(uncuedAR)),y=0,yend=0), linetype="longdash",  color="gray50")+ 
+  # scale_color_manual(name="Shared Box"
+  #                    #labels=c("cued (1/2)","Neither inside", "Shared")
+  #                    ,values=c("black",
+  #                              "red","orange", "blue", "slateblue3" ))+
+  scale_color_manual(name="Motion Direction",
+                     labels=c("Unshared","Shared")
+                     ,values=c("red",
+                               "black"))+
+  labs(x="(<-flatter)   Uncued AR   (taller->)", y = "(<-flatter) AR Response Error (taller->)") +
+  labs(title="", subtitle=" ")+
+  scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.5))+
+  theme_classic()#+
+#ggtitle("Response Error Fluctuations")
+#facet_grid(~data$cuedAR)
+scatterPlot
+
+
 
 
 #### BELOW IS THE HISTORICAL ANALYSES SCRIPTS ####
