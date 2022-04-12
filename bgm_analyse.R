@@ -28,7 +28,7 @@ bgmdata = read.csv("bgmdata.csv",header=TRUE, quote="\"")
 m1 <- lm(response_error ~ cuedAR, data = bgmdata)
 summary(m1)
 
-m2 <- lm(response_error ~ cuedAR + uncuedAR * as.factor(sameDirection1S0D_R2), data = bgmdata)
+m2 <- lm(response_error ~ cuedAR + uncuedAR * as.factor(sameDirection1S0D_R2), data = bgmdata[bgmdata$randomTrialsR1C0==0,])
 summary(m2)
 anova(m2)
 
@@ -38,6 +38,13 @@ anova(m3)
 
 m4 <- lm(response_error ~ cuedAR + uncuedAR * sameDirection1S0D *global_org1W0B *sameCatS1D0, data = bgmdata)
 summary(m4)
+
+# response AR
+m2 <- lm(responseAR ~ cuedAR + uncuedAR * as.factor(sameDirection1S0D_R2), data = bgmdata[bgmdata$randomTrialsR1C0==0,])
+summary(m2)
+
+m2 <- lm(responseAR ~ cuedAR * uncuedAR, data = bgmdata[bgmdata$randomTrialsR1C0==1,])
+summary(m2)
 
 
 plotREF_GO(bgmdata, bgmdata$response_error, bgmdata$uncuedAR, bgmdata$sameDirection1S0D)

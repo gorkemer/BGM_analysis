@@ -107,12 +107,31 @@ lesser.m1 <- lm(normedR_indv~ cuedAR *uncuedAR * as.factor(sameDirection1S0D_R2)
 summary(lesser.m1)
 anova(lesser.m1)
 
-# let's change the order of same-diff-random
-lesser.m1 <- lm(normedR_indv~ cuedAR *uncuedAR * as.factor(sameDirection1S0D_R2), bgmndata[(bgmndata$sameDirection1S0D_R2==1) | (bgmndata$sameDirection1S0D_R2==2)] )
+#check only COHERENT data
+bgmndata.c <- bgmndata[bgmndata$randomTrialsR1C0 == 0, ]
+lesser.m1 <- lm(normedR_indv~ cuedAR *uncuedAR * sameDirection1S0D_R2, bgmndata.c)
 summary(lesser.m1)
 anova(lesser.m1)
 
-# when I subset the data by coherence
+#check only RANDOM data
+bgmndata.r <- bgmndata[bgmndata$randomTrialsR1C0 == 1, ]
+lesser.m1 <- lm(normedR_indv~ cuedAR *uncuedAR, bgmndata.r)
+summary(lesser.m1)
+anova(lesser.m1)
+
+# let's change the order of same-diff-random
+?relevel
+bgmndata$sameDirection1S0D_R2 <-as.factor(bgmndata$sameDirection1S0D_R2)
+# find the reference level of this variable
+levels(bgmndata$sameDirection1S0D_R2)[1]
+# change it to 2
+bgmndata$sameDirection1S0D_R2 <- relevel(bgmndata$sameDirection1S0D_R2, "2")
+levels(bgmndata$sameDirection1S0D_R2)[1]
+
+lesser.m1 <- lm(normedR_indv~ cuedAR * uncuedAR * sameDirection1S0D_R2, bgmndata)
+summary(lesser.m1)
+anova(lesser.m1)
+
 
 
 
