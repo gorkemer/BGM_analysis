@@ -131,3 +131,5 @@ levels(bgmndata$sameDirection1S0D_R2)[1]
 lesser.m1 <- lm(normedR_indv~ cuedAR * uncuedAR * sameDirection1S0D_R2, bgmndata)
 summary(lesser.m1)
 anova(lesser.m1)
+
+write.csv(bgmndata, "bgmndata.csv", row.names = FALSE)
