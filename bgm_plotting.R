@@ -20,7 +20,7 @@ source("~/Documents/GitHub/ger_R_functions/plot_functions.R")
 # remove scientific notation in the entire R session
 options(scipen = 100)
 
-# locate the data and import it
+#### locate the data and import it ####
 setwd("/Users/gorkem.er/Desktop/21Projects/background-motion/Data_analysis")
 
 # load bgm data 
@@ -32,52 +32,22 @@ bgmdata.r = subset(bgmdata, bgmdata$randomTrialsR1C0 == 1)
 bgmndata = read.csv("bgmndata.csv",header=TRUE, quote="\"") 
 bgmndata.c = subset(bgmndata, bgmndata$randomTrialsR1C0 == 0)
 bgmndata.r = subset(bgmndata, bgmndata$randomTrialsR1C0 == 1)
-# April 12th, 2022.
-# Plotting script for the foreground motion experiment. 
-# Same/similar to bgm_plotting.R script. Only doing it for the fgm plots
-# plots to be used for the manuscript
-# good representative participant: 939045
-
-# clear the workspace
-rm(list=ls()) 
-
-# load libraries in bulk
-x<-c("ggpubr", "ggplot2", "multcomp", "pastecs", "tidyr","dplyr", "ggiraph", "ggiraphExtra", "plyr", 
-     "covreg", "plot3D", "Hmisc", "corrplot", "psych", "tidyverse", "hrbrthemes", "viridis", "gapminder",
-     "ggExtra", "scatterplot3d", "reshape2", "rlang", "plyr", "data.table", "lme4", "magrittr", "fitdistrplus",
-     "gridExtra", "statmod", "dotwhisker")
-
-require(x)
-lapply(x, require, character.only = TRUE)
-
-source("~/Documents/GitHub/ger_R_functions/plot_functions.R")
-
-savePlot <- function(myPlot) {
-  pdf("myPlot.pdf")
-  print(myPlot)
-  dev.off()
-}
-
-#### locate the data and import it ####
-# loading data
-setwd('~/Desktop/21Projects/Single_FG_Motion')
-fgmdata = read.csv('fgmdata.csv', header = TRUE)
 
 #### identify/rename variables for plotting ####
 
 # plot by cued vector vs uncued vector
-fgmdata$cued_vector <- ifelse(fgmdata$cued_ellipse == 1, fgmdata$e1_motion_dir, fgmdata$e2_motion_dir)
-fgmdata$uncued_vector <- ifelse(fgmdata$cued_ellipse == 1, fgmdata$e2_motion_dir, fgmdata$e1_motion_dir)
+bgmndata.c$cued_vector <- ifelse(bgmndata.c$cueType == 1, bgmndata.c$e1_motion_dir, bgmndata.c$e2_motion_dir)
+bgmndata.c$uncued_vector <- ifelse(bgmndata.c$cueType == 1, bgmndata.c$e2_motion_dir, bgmndata.c$e1_motion_dir)
 
 # reorder levels
-fgmdata$cued_vector <- factor(fgmdata$cued_vector, levels = c(0, 180, 90, 270))
-fgmdata$uncued_vector <- factor(fgmdata$uncued_vector, levels = c(0, 180, 90, 270))
+#bgmndata.c$cued_vector <- factor(bgmndata.c$cued_vector, levels = c(0, 180, 90, 270))
+#bgmndata.c$uncued_vector <- factor(bgmndata.c$uncued_vector, levels = c(0, 180, 90, 270))
 
 # rename levels
-fgmdata$cued_vector <- factor(fgmdata$cued_vector, labels = c( sprintf('\u2192'), sprintf('\u2190'), sprintf('\u2191'), sprintf('\u2193')))
-fgmdata$uncued_vector <- factor(fgmdata$uncued_vector, labels = c(sprintf('\u2192'), sprintf('\u2190'), sprintf('\u2191'),sprintf('\u2193')))
+#bgmndata.c$cued_vector <- factor(bgmndata.c$cued_vector, labels = c( sprintf('\u2192'), sprintf('\u2190'), sprintf('\u2191'), sprintf('\u2193')))
+#bgmndata.c$uncued_vector <- factor(bgmndata.c$uncued_vector, labels = c(sprintf('\u2192'), sprintf('\u2190'), sprintf('\u2191'),sprintf('\u2193')))
 
-fgmdata$global_org <- factor(fgmdata$global_org, labels = c("between", "within" ))
+bgmndata.c$global_org <- factor(bgmndata.c$global_org, labels = c("between", "within" ))
 
 #### plotting variables ####
 yaxisLim <- 0.1
@@ -90,15 +60,12 @@ identicalMotion_color <- "red"
 differentMotion_color <- "black"
 lmAlpha <- 0.3
 
-# remove scientific notation in the entire R session
-options(scipen = 100)
-
 # for plotting on the aggregated data 
-fgmdata.a <- aggregate(responseError ~ uncuedAR  + sameDirection1S0D + sub, fgmdata, mean)
+bgmndata.c <- aggregate(response_error ~ uncuedAR  + sameDirection1S0D + sub, bgmndata.c, mean)
 
-#### fgm plot 01 ####
+#### bgm plot 01 ####
 
-bgmplot03 <- ggplot(fgmdata, aes(x = uncuedAR, y = responseError, colour=as.factor(sameDirection1S0D))) + 
+bgmplot01 <- ggplot(bgmndata.c, aes(x = uncuedAR, y = normedR_indv, colour=as.factor(sameDirection1S0D))) + 
   #geom_point(shape=1, size=0.5, alpha=jitterAlpha, show.legend = FALSE) +
   #geom_jitter(shape=1, size=0.5, alpha=jitterAlpha, show.legend = FALSE) +
   #geom_density_2d(color=densityColor, alpha=densityAlpha) + 
@@ -114,15 +81,15 @@ bgmplot03 <- ggplot(fgmdata, aes(x = uncuedAR, y = responseError, colour=as.fact
   labs(title="", subtitle=" ")+
   scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.5))+
   theme_classic()
-bgmplot03
-ggsave(filename = "bgmplot03.pdf", width = 14, height = 8, units = "in", device='pdf', dpi=700) 
+bgmplot01
+ggsave(filename = "bgmplot01.pdf", width = 14, height = 8, units = "in", device='pdf', dpi=700) 
 
 #### fgm plot 02 ####
 
-fgmdata.a <- aggregate(responseError ~ uncuedAR  + sameDirection1S0D + sub + global_org+
-                         cued_vector + uncued_vector, fgmdata, mean)
+bgmndata.ca <- aggregate(normedR_indv ~ uncuedAR  + sameDirection1S0D + sub + global_org+
+                         cued_vector + uncued_vector, bgmndata.c, mean)
 jitterAlpha <- 0.05
-fgmplot02 <- ggplot(fgmdata.a, aes(x = uncuedAR, y = responseError, colour=as.factor(sameDirection1S0D))) + 
+bgmplot02 <- ggplot(bgmndata.ca, aes(x = uncuedAR, y = normedR_indv, colour=as.factor(sameDirection1S0D))) + 
   #geom_point(shape=11, size=0.5, alpha=0.5, show.legend = FALSE) +
   geom_jitter(shape=1, size=0.5, alpha=jitterAlpha, show.legend = FALSE) +
   geom_density_2d(color="blue", alpha=densityAlpha) + 
@@ -154,29 +121,29 @@ ggsave(filename = "bgmplot02.pdf", width = 14, height = 8, units = "in", device=
 #savePlot(interactionPlotVectors)
 
 #### fgm plot 03 ####
-agg <- aggregate(responseAR ~ cuedAR + uncuedAR + sameDirection1S0D, fgmdata, mean)
+agg <- aggregate(responseAR ~ cuedAR + uncuedAR + sameDirection1S0D, bgmndata.c, mean) # or normedR_indv
 
-agg1 <- subset(agg, agg$cuedAR==-0.46331866)
-agg2 <- subset(agg, agg$cuedAR==-0.41698684)
-agg3 <- subset(agg, agg$cuedAR==-0.37065503)
-agg4 <- subset(agg, agg$cuedAR==-0.32432321)
-agg5 <- subset(agg, agg$cuedAR==-0.27799139)
-agg6 <- subset(agg, agg$cuedAR==-0.23165957)
-agg7 <- subset(agg, agg$cuedAR==-0.18532775)
-agg8 <- subset(agg, agg$cuedAR==-0.13899593)
-agg9 <- subset(agg, agg$cuedAR==-0.09266412)
-agg10 <- subset(agg, agg$cuedAR==-0.04633230)
-agg11 <- subset(agg, agg$cuedAR==-0.00000048)
-agg12 <- subset(agg, agg$cuedAR==0.04633134)
-agg13 <- subset(agg, agg$cuedAR==0.09266316)
-agg14 <- subset(agg, agg$cuedAR==0.13899498)
-agg15 <- subset(agg, agg$cuedAR==0.18532679)
-agg16 <- subset(agg, agg$cuedAR==0.23165861)
-agg17 <- subset(agg, agg$cuedAR==0.27799043)
-agg18 <- subset(agg, agg$cuedAR==0.32432225)
-agg19 <- subset(agg, agg$cuedAR==0.37065407)
-agg20 <- subset(agg, agg$cuedAR==0.41698588)
-agg21 <- subset(agg, agg$cuedAR==0.46331770)
+agg1 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[1])
+agg2 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[2])
+agg3 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[3])
+agg4 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[4])
+agg5 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[5])
+agg6 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[6])
+agg7 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[7])
+agg8 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[8])
+agg9 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[9])
+agg10 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[10])
+agg11 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[11])
+agg12 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[12])
+agg13 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[13])
+agg14 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[14])
+agg15 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[15])
+agg16 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[16])
+agg17 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[17])
+agg18 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[18])
+agg19 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[19])
+agg20 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[20])
+agg21 <- subset(agg, agg$cuedAR==sort(unique(bgmndata.c$cuedAR))[21])
 
 #add barkod to each agg lists, e.g. agg1 = agg = 1
 agg1$barkod <- 1
