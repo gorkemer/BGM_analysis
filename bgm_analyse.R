@@ -596,6 +596,35 @@ summary(lmer(responseAR_normed ~ uncuedAR * sameDirection1S0D_R2 + (1 | sub) +
                (1 | sub:sameDirection1S0D_R2) + (1 | sub:uncuedAR), data = fgmdata))
 # 2) global org
 summary(lmer(responseAR_normed ~ uncuedAR + uncuedAR:sameDirection1S0D_R2 * global_org1W0B + (1 | sub) + (1 | sub:uncuedAR) + (1 | sub:global_org1W0B), data = fgmdata, REML = FALSE))
+# 3) beta plot response normed
+number_of_sub <- unique(fgmdata$sub)
+tmpdata <- aggregate(responseAR_normed~ uncuedAR + sub + sameDirection1S0D, fgmdata, mean)
+fgmdata.indv_beta_response_normed <- data.frame(matrix(ncol = 3, nrow = length(number_of_sub)))
+for (r in 1:length(number_of_sub)){ 
+  tmpdata_sub <- tmpdata[tmpdata$sub==number_of_sub[r],]
+  #run a regression model on individual sub
+  lm_sub_diff <- lm(responseAR_normed ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$sameDirection1S0D==0,])
+  lm_beta_diff <- summary(lm_sub_diff)$coefficients[2]
+  lm_sub_same <- lm(responseAR_normed ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$sameDirection1S0D==1,])
+  lm_beta_same <- summary(lm_sub_same)$coefficients[2]
+  fgmdata.indv_beta_response_normed[r,1] <- lm_beta_diff
+  fgmdata.indv_beta_response_normed[r,2] <- lm_beta_same
+  fgmdata.indv_beta_response_normed[r,3] = number_of_sub[r]
+}
+head(fgmdata.indv_beta_response_normed)
+plot(fgmdata.indv_beta_response_normed$X1, fgmdata.indv_beta_response_normed$X2)
+abline(c(0,1)) # more points lie left of the abline, same has higher response errors
+#### MELT DATA ####
+#long to wide format
+meltData <- melt(fgmdata.indv_beta_response_normed[1:2])
+head(meltData)
+my_comparisons = list(c("X1","X2"))
+beta_plot_response_normed <- ggline(meltData, x = "variable", y = "value",
+                                    add = c("mean_ci", "jitter"), add.params = list(color ="variable", size = 2, alpha = 0.5))+
+  stat_compare_means(paired= TRUE, comparisons = my_comparisons)
+beta_plot_response_normed
+compare_means(value ~ variable, data = meltData, paired = TRUE,  method = "t.test")# alternative = "greater", method = "t.test"
+t.test(meltData$value[meltData$variable == "X1"], meltData$value[meltData$variable == "X2"], paired = T)
 # random motion
 # toggle off things at the top
 # fgm -> bgm
