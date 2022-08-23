@@ -78,6 +78,23 @@ plot(fgmdata$cuedAR[fgmdata$sub == testToBeCleaned], fgmdata$responseAR[fgmdata$
 # those below40P all show bad performance in all metrics (e.g. regression beta, p-value, correlation, reaction time). 
 incompletedPeople <- fgmdata.cleaning$id[fgmdata.cleaning$trialN<241]
 incompletedPeople
+#count globally
+fgmdata.globalTrialN <- data.frame(matrix(ncol = 1, nrow = length(number_of_sub)))
+for (s in 1:length(number_of_sub)){
+  tmpdata <- fgmdata[fgmdata$sub == number_of_sub[s],]
+  fgmdata.globalTrialN[s,1] <- nrow(tmpdata)# check the n of each participant
+  fgmdata.globalTrialN[s,2] <- number_of_sub[s]
+}
+colnames(fgmdata.globalTrialN) <- c("trialN","id")
+head(fgmdata.globalTrialN)
+incompletedPeople_global <- fgmdata.globalTrialN$id[fgmdata.globalTrialN$trialN<241]
+plot(fgmdata.globalTrialN[,2], fgmdata.globalTrialN[,1])
+abline(h = 241)
+# check coherent and global trial N people
+incompletedPeople
+incompletedPeople_global
+# they are identical anyway so my wrong-doing of counting trialsN for coherent trials found the
+# same people that this global method founds. Great news! Agu 22, 10:10 pm.
 # for random analyses, I need to remove those people using the coherent analysis
 # 21 agu, I found out that 19117 19142 19242 are incomplete
 # incompletedPeople <- c(19117, 19142, 19242) # WARNING THIS IS FOR RANDOM ANALYSIS ONLY
