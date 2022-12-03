@@ -344,10 +344,90 @@ ggsave(filename = "bgm_beta_plot3_response_normed.png",  width = 5, height = 5, 
 summary(lmer(responseAR_normed ~ uncuedAR * sameDirection1S0D + (1 | sub) + 
                (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR), data = fgmdata))
 
+# adding cuedAR x responseAR plot
+cuedAR_plot
+ggsave(filename = "bgm_cuedAR_plot.png",  width = 5, height = 5, units = "in", device='png', dpi=700) 
+df <- data.frame(x = fgmdata$cuedAR, y = fgmdata$responseAR)
+lm_eqn(df)
+cuedAR_plot_normed # normed!
+ggsave(filename = "bgm_cuedAR_normed_plot.png",  width = 5, height = 5, units = "in", device='png', dpi=700) 
+df <- data.frame(x = fgmdata$cuedAR, y = fgmdata$responseAR_normed)
+lm_eqn(df)
+
+
 
 # no global organization plot global_org1W0B1W0B_plot + facet_grid(~uncuedCat+global_org1W0B)
 ###################################################################
-
+# Start of adding cued AR graph after Tim's review
+#tmpdata <- aggregate(responseAR~ cuedAR + sub + sameDirection1S0D, fgmdata, mean)
+#Normalized Response AR Data
+#tmpdata$responseAR_norm <- (tmpdata$responseAR-min(tmpdata$responseAR))/(max(tmpdata$responseAR)-min(tmpdata$responseAR))
+# with first derivative of gaussian fitting
+cuedAR_plot <- ggplot(fgmdata, aes(x = cuedAR, y = responseAR)) +
+  geom_jitter(alpha = 1/30, aes(color = as.factor(sub))) +
+  geom_density_2d(color=densityColor, alpha=densityAlpha) +
+  # geom_abline(linetype = 11,  color="gray50") +
+  geom_abline(linetype="longdash", color = "gray50")+
+  # geom_segment(aes(x=min(unique(cuedAR)),xend=max(unique(cuedAR)),
+  #                  y=min(unique(cuedAR)),yend=max(unique(cuedAR))), 
+  #              linetype = 11,  color="gray60")+ 
+  geom_smooth(method = "lm", color = "blue") +
+  # geom_smooth(method="nls",
+  #             formula= y ~ x * a * w * sqrt(2)/exp(-(0.5)) * exp(-(w*x^2)) , # x*a*w*c*exp(-(w*x)^2)
+  #             start = list(a = 0.39, w = 0.63),
+  #             se=FALSE, algorithm="port",
+  #             color = "firebrick2") + #aes(color = as.factor(sameDirection1S0D))
+  # geom_smooth(method = "glm", 
+  #             method.args = list(family = "binomial"), 
+  #             se = FALSE, color = "orange") +
+  #coord_cartesian(ylim=c(-0.02, 0.04)) +
+  geom_hline(yintercept=0.0,linetype="longdash", color = "gray50") + 
+  labs(x="(< flatter) Uncued AR (taller >)", y = "(< err on flatter) Mean Response Error ( err on taller >)", size = 10.5) +
+  labs(title="", subtitle=" ")+
+  scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.5))+
+  coord_cartesian(ylim=c(-0.61, 0.61)) +
+  theme_classic() +
+  theme(
+    legend.position = "none",#c(0.8, 0.14),
+  )
+cuedAR_plot
+# NORMED RESPONSE AR
+cuedAR_plot_normed <- ggplot(fgmdata, aes(x = cuedAR, y = responseAR_normed)) +
+  geom_jitter(alpha = 1/30, aes(color = as.factor(sub))) +
+  geom_density_2d(color=densityColor, alpha=densityAlpha) +
+  # geom_abline(linetype = 11,  color="gray50") +
+  #geom_abline(linetype="longdash", color = "gray50")+
+  # geom_segment(aes(x=min(unique(cuedAR)),xend=max(unique(cuedAR)),
+  #                  y=min(unique(cuedAR)),yend=max(unique(cuedAR))), 
+  #              linetype = 11,  color="gray60")+ 
+  geom_smooth(method = "lm", color = "blue") +
+  # geom_smooth(method="nls",
+  #             formula= y ~ x * a * w * sqrt(2)/exp(-(0.5)) * exp(-(w*x^2)) , # x*a*w*c*exp(-(w*x)^2)
+  #             start = list(a = 0.39, w = 0.63),
+  #             se=FALSE, algorithm="port",
+  #             color = "firebrick2") + #aes(color = as.factor(sameDirection1S0D))
+  # geom_smooth(method = "glm", 
+  #             method.args = list(family = "binomial"), 
+  #             se = FALSE, color = "orange") +
+  #coord_cartesian(ylim=c(-0.02, 0.04)) +
+  geom_hline(yintercept=0.0,linetype="longdash", color = "gray50") + 
+  labs(x="(< flatter) Uncued AR (taller >)", y = "(< err on flatter) Mean Response Error ( err on taller >)", size = 10.5) +
+  labs(title="", subtitle=" ")+
+  scale_x_continuous(breaks = seq(-0.5, 0.5, by = 0.5))+
+  coord_cartesian(ylim=c(-0.61, 0.61)) +
+  theme_classic() +
+  theme(
+    legend.position = "none",#c(0.8, 0.14),
+  )
+cuedAR_plot_normed
+lm_eqn <- function(df){
+  m <- lm(y ~ x, df);
+  eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+                   list(a = format(unname(coef(m)[1]), digits = 2),
+                        b = format(unname(coef(m)[2]), digits = 2),
+                        r2 = format(summary(m)$r.squared, digits = 3)))
+  as.character(as.expression(eq));
+}
 
 
 ### BELOW IS before 16, used for CNS SF 22 ###

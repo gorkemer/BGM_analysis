@@ -8,7 +8,7 @@ rm(list=ls())
 x<-c("ggpubr", "ggplot2", "multcomp", "pastecs", "tidyr","dplyr", "ggiraph", "ggiraphExtra", "plyr", 
      "covreg", "plot3D", "Hmisc", "corrplot", "psych", "tidyverse", "hrbrthemes", "viridis", "gapminder",
      "ggExtra", "scatterplot3d", "reshape2", "rlang", "plyr", "data.table", "lme4", "magrittr", "fitdistrplus",
-     "gridExtra", "statmod", "dotwhisker")
+     "gridExtra", "statmod", "dotwhisker", "lmerTest")
 require(x)
 lapply(x, require, character.only = TRUE)
 source("~/Documents/GitHub/ger_R_functions/plot_functions.R")
@@ -566,11 +566,14 @@ summary(lmer(responseAR_normed ~ uncuedAR + uncuedAR:sameDirection1S0D_R2 * glob
  # end of final # 
 #### FINAL ADDING TO THIS SCRIPT #### 
 # ADDING TO MANUSCRIPT #
+library(equatiomatic)
 # 1) regression plot stats
-fullModel <- lmer(response_error ~ uncuedAR * sameDirection1S0D + (1 | sub) + 
-                     (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR), data = fgmdata, REML = FALSE)
+fullModel <- lmer(response_error ~ uncuedAR * sameDirection1S0D + (1 | sub), data = fgmdata, REML = FALSE)
+# fullModel <- lmer(response_error ~ uncuedAR * sameDirection1S0D + (1 | sub) + 
+#                     (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR), data = fgmdata, REML = FALSE)
 summary(fullModel)
 anova(fullModel)
+extract_eq(fullModel, wrap = TRUE, terms_per_line = 2)
 # 2) uncued beta coeff stats
 #doing it with simple regression motion separately
 number_of_sub <- unique(fgmdata$sub)
@@ -601,18 +604,25 @@ summary(gglinePlot)
 compare_means(value ~ variable, data = meltData, paired = TRUE,  method = "t.test")# alternative = "greater", method = "t.test"
 t.test(meltData$value[meltData$variable == "X1"], meltData$value[meltData$variable == "X2"], paired = T)
 # 3) global organization stats
+globalOrg_model <- lmer(response_error ~ uncuedAR * sameDirection1S0D * global_org  + (1 | sub), data = fgmdata,  REML = FALSE)
+summary(globalOrg_model)
+extract_eq(globalOrg_model, wrap = TRUE, terms_per_line = 2)
 # a) with all interactions
 summary(lmer(response_error ~ uncuedAR * sameDirection1S0D * global_org  + (1 | sub) + 
                (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR) + (1 | sub:global_org), data = fgmdata,  REML = FALSE))
 # b) relevant interactions
 summary(lmer(response_error ~ uncuedAR + uncuedAR:sameDirection1S0D * global_org  + (1 | sub) + 
                (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR) + (1 | sub:global_org), data = fgmdata,  REML = FALSE))
-# doing it same with the normed response AR
+# doing it same with the ### NORMED RESPONSE AR !! ####
 # 1) regression
-summary(lmer(responseAR_normed ~ uncuedAR * sameDirection1S0D_R2 + (1 | sub) + 
-               (1 | sub:sameDirection1S0D_R2) + (1 | sub:uncuedAR), data = fgmdata))
+normedResponseAR_model <- lmer(responseAR_normed ~ uncuedAR * sameDirection1S0D_R2 + (1 | sub), data = fgmdata)
+summary(normedResponseAR_model)
+extract_eq(fullModel, wrap = TRUE, terms_per_line = 2)
 # 2) global org
-summary(lmer(responseAR_normed ~ uncuedAR + uncuedAR:sameDirection1S0D_R2 * global_org1W0B + (1 | sub) + (1 | sub:uncuedAR) + (1 | sub:global_org1W0B), data = fgmdata, REML = FALSE))
+globalOrg_model_responseAR <- lmer(responseAR_normed ~ uncuedAR * sameDirection1S0D * global_org  + (1 | sub), data = fgmdata,  REML = FALSE)
+summary(globalOrg_model_responseAR)
+extract_eq(globalOrg_model_responseAR, wrap = TRUE, terms_per_line = 2)
+#summary(lmer(responseAR_normed ~ uncuedAR + uncuedAR:sameDirection1S0D_R2 * global_org1W0B + (1 | sub) + (1 | sub:uncuedAR) + (1 | sub:global_org1W0B), data = fgmdata, REML = FALSE))
 # 3) beta plot response normed
 number_of_sub <- unique(fgmdata$sub)
 tmpdata <- aggregate(responseAR_normed~ uncuedAR + sub + sameDirection1S0D, fgmdata, mean)
@@ -679,6 +689,272 @@ summary(lmer(responseAR_normed ~ uncuedAR + (1 | sub) + (1 | sub:uncuedAR), data
 # global org
 summary(lmer(responseAR_normed ~ uncuedAR * global_org1W0B + (1 | sub) + (1 | sub:uncuedAR) + (1 | sub:global_org1W0B), data = fgmdata, REML = FALSE))
 # THE END. # 
+# 09/10/22, check the integration per category same/different nature
+# doing it similar to beta analysis
+fgmdata <- bgmdata.c
+fgmdata$cuedCat_new <- ifelse(fgmdata$cuedAR == 0, 0, ifelse(fgmdata$cuedAR>0, 1, -1))
+fgmdata$uncuedCat_new <- ifelse(fgmdata$uncuedAR == 0, 0, ifelse(fgmdata$uncuedAR > 0, 1, -1))
+number_of_sub <- unique(fgmdata$sub)
+fgmdata$sameCatS1D0 <- ifelse(fgmdata$cuedCat_new == fgmdata$uncuedCat_new, 1, 0)
+tmpdata <- aggregate(response_error~ uncuedAR + sub + sameDirection1S0D + sameCatS1D0, fgmdata, mean)
+fgmdata.indv_beta_cat <- data.frame(matrix(ncol = 5, nrow = length(number_of_sub)))
+for (r in 1:length(number_of_sub)){ 
+  tmpdata_sub <- tmpdata[tmpdata$sub==number_of_sub[r],]
+  #run a regression model on individual sub
+  # same motion & same category
+  lm_sub_SM_SC <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$sameDirection1S0D==1 & tmpdata_sub$sameCatS1D0 == 1,])
+  # same motion & diff category
+  lm_sub_SM_DC <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$sameDirection1S0D==1 & tmpdata_sub$sameCatS1D0 == 0,])
+  # diff motion & same category
+  lm_sub_DM_SC <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$sameDirection1S0D==0 & tmpdata_sub$sameCatS1D0 == 1,])
+  # diff motion & diff category
+  lm_sub_DM_DC <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$sameDirection1S0D==0 & tmpdata_sub$sameCatS1D0 == 0,])
+  
+  lm_beta_SM_SC <- summary(lm_sub_SM_SC)$coefficients[2]
+  lm_beta_SM_DC <- summary(lm_sub_SM_DC)$coefficients[2]
+  lm_beta_DM_SC <- summary(lm_sub_DM_SC)$coefficients[2]
+  lm_beta_DM_DC <- summary(lm_sub_DM_DC)$coefficients[2]
+  
+  fgmdata.indv_beta_cat[r,1] <- lm_beta_SM_SC # same motion & same category
+  fgmdata.indv_beta_cat[r,2] <- lm_beta_SM_DC # same motion & diff category
+  fgmdata.indv_beta_cat[r,3] <- lm_beta_DM_SC # diff motion & same category
+  fgmdata.indv_beta_cat[r,4] <- lm_beta_DM_DC # diff motion & diff category
+  fgmdata.indv_beta_cat[r,5] = number_of_sub[r]
+}
+head(fgmdata.indv_beta_cat)
+plot(fgmdata.indv_beta_cat$X1, fgmdata.indv_beta_cat$X2)
+abline(c(0,1)) # more points lie left of the abline, same has higher response errors
+colnames(fgmdata.indv_beta_cat) <- c("SamMot_SamCat", "SamMot_DiffCat","DiffMot_SamCat", "DiffMot_DiffCat", "sub")
+#long to wide format
+meltData <- melt(fgmdata.indv_beta_cat[1:4])
+head(meltData)
+my_comparisons = list(c("SamMot_SamCat","SamMot_DiffCat"), c("DiffMot_SamCat", "DiffMot_DiffCat"), 
+                      c("SamMot_SamCat","DiffMot_SamCat"), c("SamMot_DiffCat", "DiffMot_DiffCat"))
+gglinePlot <- ggline(meltData, x = "variable", y = "value", 
+                     add = c("mean_ci", "jitter"), palette = "jco")+ 
+  stat_compare_means(paired = TRUE, comparisons = my_comparisons)+
+  stat_compare_means(label.y = 0.3)
+gglinePlot
+t.test(meltData$value[meltData$variable == "SamMot_SamCat"], meltData$value[meltData$variable == "DiffMot_SamCat"], paired = T)
+mean(meltData$value[meltData$variable == "SamMot_SamCat"]) # -0.39 (-.31 for fgm)
+mean(meltData$value[meltData$variable == "DiffMot_SamCat"]) # -0.42 (-.35 for fgm)
+# okay this is interesting. Same category leads to repulsion, but same motion and same category leads to lesser 
+# repulsion.
+# same category repulses, different category attracts. Weird, let's check with just category
+number_of_sub <- unique(fgmdata$sub)
+tmpdata <- aggregate(responseError~ uncuedAR + sub + sameCatS1D0, fgmdata, mean)
+fgmdata.indv_beta <- data.frame(matrix(ncol = 3, nrow = length(number_of_sub)))
+for (r in 1:length(number_of_sub)){ 
+  tmpdata_sub <- tmpdata[tmpdata$sub==number_of_sub[r],]
+  #run a regression model on individual sub
+  lm_sub_diff <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$sameCatS1D0==0,])
+  lm_beta_diff <- summary(lm_sub_diff)$coefficients[2]
+  lm_sub_same <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$sameCatS1D0==1,])
+  lm_beta_same <- summary(lm_sub_same)$coefficients[2]
+  fgmdata.indv_beta[r,1] <- lm_beta_diff
+  fgmdata.indv_beta[r,2] <- lm_beta_same
+  fgmdata.indv_beta[r,3] = number_of_sub[r]
+}
+head(fgmdata.indv_beta)
+plot(fgmdata.indv_beta$X1, fgmdata.indv_beta$X2)
+abline(c(0,1)) # more points lie left of the abline, same has higher response errors
+#long to wide format
+meltData <- melt(fgmdata.indv_beta[1:2])
+gglinePlot <- ggline(meltData, x = "variable", y = "value", 
+                     add = c("mean_ci", "jitter"), palette = "jco")+ 
+  stat_compare_means(paired = TRUE, comparisons = my_comparisons)+
+  stat_compare_means(label.y = 0.3)
+gglinePlot
+# wow, yeah, category plays a huge role. Let's check with a plain regression model
+fullModel <- lmer(response_error ~ uncuedAR * sameDirection1S0D * sameCatS1D0 + (1 | sub) + 
+                    (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR) + (1 | sub:sameCatS1D0), data = fgmdata, REML = FALSE)
+summary(fullModel)
+anova(fullModel)
+# wow, what really is going is the effect of category. Same category -> repulsion, no interaction of grouping but
+# a main effect of grouping nevertheless. # need to discuss this with Tim. 
+# same style with global organization?
+number_of_sub <- unique(fgmdata$sub)
+tmpdata <- aggregate(response_error~ uncuedAR + sub + global_org1W0B + sameCatS1D0, fgmdata, mean)
+fgmdata.indv_beta_cat <- data.frame(matrix(ncol = 5, nrow = length(number_of_sub)))
+for (r in 1:length(number_of_sub)){ 
+  tmpdata_sub <- tmpdata[tmpdata$sub==number_of_sub[r],]
+  #run a regression model on individual sub
+  # within hemi & same category
+  lm_sub_WH_SC <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$global_org1W0B==1 & tmpdata_sub$sameCatS1D0 == 1,])
+  # within hemi  & diff category
+  lm_sub_WH_DC <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$global_org1W0B==1 & tmpdata_sub$sameCatS1D0 == 0,])
+  # btw hemi  & same category
+  lm_sub_BH_SC <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$global_org1W0B==0 & tmpdata_sub$sameCatS1D0 == 1,])
+  # btw hemi  & diff category
+  lm_sub_BH_DC <- lm(response_error ~ uncuedAR, data = tmpdata_sub[tmpdata_sub$global_org1W0B==0 & tmpdata_sub$sameCatS1D0 == 0,])
+  
+  lm_beta_WH_SC <- summary(lm_sub_WH_SC)$coefficients[2]
+  lm_beta_WH_DC <- summary(lm_sub_WH_DC)$coefficients[2]
+  lm_beta_BH_SC <- summary(lm_sub_BH_SC)$coefficients[2]
+  lm_beta_BH_DC <- summary(lm_sub_BH_DC)$coefficients[2]
+  
+  fgmdata.indv_beta_cat[r,1] <- lm_beta_WH_SC # same hemi & same category
+  fgmdata.indv_beta_cat[r,2] <- lm_beta_WH_DC # same hemi & diff category
+  fgmdata.indv_beta_cat[r,3] <- lm_beta_BH_SC # btw hemi & same category
+  fgmdata.indv_beta_cat[r,4] <- lm_beta_BH_DC # btw hemi & diff category
+  fgmdata.indv_beta_cat[r,5] = number_of_sub[r]
+}
+head(fgmdata.indv_beta_cat)
+plot(fgmdata.indv_beta_cat$X1, fgmdata.indv_beta_cat$X2)
+abline(c(0,1)) # more points lie left of the abline, same has higher response errors
+colnames(fgmdata.indv_beta_cat) <- c("Within_SamCat", "Within_DiffCat","Between_SamCat", "Between_DiffCat", "sub")
+#long to wide format
+meltData <- melt(fgmdata.indv_beta_cat[1:4])
+head(meltData)
+my_comparisons = list(c("Within_SamCat","Within_DiffCat"), c("Between_SamCat", "Between_DiffCat"), 
+                      c("Within_SamCat","Between_SamCat"), c("Within_DiffCat", "Between_DiffCat"))
+gglinePlot <- ggline(meltData, x = "variable", y = "value", 
+                     add = c("mean_ci", "jitter"), palette = "jco")+ 
+  stat_compare_means(paired = TRUE, comparisons = my_comparisons)+
+  stat_compare_means(label.y = 0.3)
+gglinePlot
+# wow similar pattern as motion sameness. Same category leads to repulsion.
+# but more repulsion if they are within. 
+# checking all this in great model
+greatModel <- lmer(response_error ~ uncuedAR + uncuedAR:sameDirection1S0D + uncuedAR:sameCatS1D0 + uncuedAR:sameDirection1S0D:sameCatS1D0 + global_org1W0B + uncuedAR:sameDirection1S0D:sameCatS1D0:global_org1W0B + (1 | sub) + 
+                    (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR) + (1 | sub:sameCatS1D0) + (1 | sub:global_org1W0B), data = fgmdata, REML = FALSE)
+summary(greatModel)
+anova(fullModel)
+# weird. 4-way interaction. If grouping occurs at the within, leads to more repulsion
+# --- # ----
+# checking n-1 effect: differences in cuedAR and now cuedAR in leading interaction
+for (i in 1:nrow(fgmdata)){
+  if (i != 1){
+    print(i)
+    fgmdata$cuedAR_prev[i] <- fgmdata$cuedAR[i-1]
+    fgmdata$arDiff_prev[i] <- fgmdata$arDiff[i-1]
+    if (i > 2){
+      fgmdata$cuedAR_prev2[i] <- fgmdata$cuedAR[i-2]
+    }
+  }
+}
+fullModel <- lmer(responseAR_normed ~ uncuedAR * sameDirection1S0D * cuedAR_prev + (1 | sub) + 
+                    (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR), data = fgmdata, REML = FALSE)
+summary(fullModel)
+fullModel <- lmer(responseAR_normed ~ uncuedAR * sameDirection1S0D * cuedAR_prev * cuedAR_prev2 + (1 | sub) + 
+                    (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR), data = fgmdata, REML = FALSE)
+summary(fullModel)
+# main effect of n-1. as the current gets more taller than previous, response errors goes towards flatter (repulsion from
+# n-1?). 
+# checking just the n-1 cuedAR
+fullModel <- lmer(response_error ~ uncuedAR * sameDirection1S0D * cuedAR_prev + (1 | sub) + 
+                    (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR), data = fgmdata, REML = FALSE)
+summary(fullModel)
+fullModel <- lmer(response_error ~ uncuedAR * sameDirection1S0D * cuedAR_prev * cuedAR_prev2 + (1 | sub) + 
+                    (1 | sub:sameDirection1S0D) + (1 | sub:uncuedAR), data = fgmdata, REML = FALSE)
+summary(fullModel)
+anova(fullModel)
+# so actually, responses attract towards the previous cuedAR. But no interaction. 
+###
+# getting back to original analyses
+# drawing 3-D graph
+tmpdata <- aggregate(responseAR_normed ~ uncuedAR + cuedAR, fgmdata[fgmdata$sameDirection1S0D==1,], mean)
+x = tmpdata$cuedAR
+y = tmpdata$uncuedAR
+z = tmpdata$responseAR_normed
+# scatter3D(x, y, z, colvar = NULL, col = "blue",
+#           pch = 19, cex = 0.5, bty = "b2")
+# scatter3D(x, y, z, bty = "g", pch = 18, col = gg.col(100))
+# scatter3D(x, y, z, bty = "g", pch = 18, col = gg.col(100), theta = 300, phi = 360)
+# scatter3D(x, y, z, phi = 0, bty ="g",
+#           main = "FGM_data_sameMot", xlab = "cued_AR",
+#           ylab ="uncued_AR", zlab = "response_error") # nice
+# scatter3D(x, y, z, pch = 18,  theta = 40, phi = 10,
+#           main = "FGM_data", xlab = "cued_AR",
+#           ylab ="uncued_AR", zlab = "response_error")
+# scatter3D(x, y, z, phi = 0, bty = "g",
+#           pch = 20, cex = 2, ticktype = "detailed",
+#           main = "FGM_data_sameMot", xlab = "cued_AR",
+#           ylab ="uncued_AR", zlab = "response_error") # alternative
+# scatter3D(x, y, z, phi = 0, bty ="g",
+#           main = "FGM_data_sameMot", xlab = "cued_AR",
+#           ylab ="uncued_AR", zlab = "response_error",
+#           col = ramp.col(c("red", "yellow", "green"))) # custom ramp_color
+scatter3D(x, y, z, phi = 0, theta = 90, bty ="g",
+          main = "FGM_data_sameMot", xlab = "cued_AR",
+          ylab ="uncued_AR", zlab = "responseAR",
+          ticktype = "detailed",
+          colkey = list(side = 1, length = 0.5),
+          col = ramp.col(c("red", "yellow", "green"))) # nice
+# DIFFERENT MOTION #
+tmpdata <- aggregate(responseAR_normed ~ uncuedAR + cuedAR, fgmdata[fgmdata$sameDirection1S0D==0,], mean)
+x = tmpdata$cuedAR
+y = tmpdata$uncuedAR
+z = tmpdata$responseAR_normed
+# scatter3D(x, y, z, phi = 0, bty ="g",
+#           main = "FGM_data_diffMot", xlab = "cued_AR",
+#           ylab ="uncued_AR", zlab = "response_error") # nice
+# # col = ramp.col(c("red", "yellow", "green"))) # custom ramp_color
+scatter3D(x, y, z, phi = 0, theta = 90, bty ="g",
+          main = "FGM_data_diffMot", xlab = "cued_AR",
+          ylab ="uncued_AR", zlab = "responseAR",
+          ticktype = "detailed",
+          colkey = list(side = 1, length = 0.5),
+          col = ramp.col(c("red", "yellow", "green"))) # nice
+
+#layout(matrix(c(1, 2), 1))
+layout(matrix(c(1, 2, 3), 1))
+
+
+# Compute the linear regression (z = ax + by + d)
+fit <- lm(z ~ x + y)
+# predict values on regular xy grid
+grid.lines = 26
+x.pred <- seq(min(x), max(x), length.out = grid.lines)
+y.pred <- seq(min(y), max(y), length.out = grid.lines)
+xy <- expand.grid( x = x.pred, y = y.pred)
+z.pred <- matrix(predict(fit, newdata = xy), 
+                 nrow = grid.lines, ncol = grid.lines)
+# fitted points for droplines to surface
+fitpoints <- predict(fit)
+# scatter plot with regression plane
+scatter3D(x, y, z, pch = 18, cex = 2, 
+          theta = 90, phi = 0, ticktype = "detailed",
+          xlab = "cued_AR", ylab = "uncued_AR", zlab = "responseAR_normed",
+          colkey = list(side = 1, length = 0.5),
+          col = ramp.col(c("red", "yellow", "green")),
+          surf = list(x = x.pred, y = y.pred, z = z.pred,  
+                      facets = NA, fit = fitpoints), main = "same_motion")
+# alternative - original
+scatter3D(x, y, z, phi = 180, theta = 180, bty ="g",
+          xlab = "cued_AR",
+          ylab ="uncued_AR", zlab = "responseAR_normed",
+          ticktype = "detailed",
+          colkey = list(side = 1, length = 0.5),
+          col = ramp.col(c("red", "yellow", "green")),
+          surf = list(x = x.pred, y = y.pred, z = z.pred,  
+                      facets = NA, fit = fitpoints), main = "diff_motion")
+# NORMED RESPONSE AR fgmdata$responseAR_normed <- bgmndata.c$normedR_indv
+
+
+
+
+# different category - same motion vs different category - different motion
+tmpdata_DC_SM <- aggregate(response_error ~ sub + uncuedAR + cuedAR, fgmdata[fgmdata$sameCatS1D0==0 & fgmdata$sameDirection1S0D == 1,], mean)
+tmpdata_DC_DM <- aggregate(response_error ~ sub + uncuedAR + cuedAR, fgmdata[fgmdata$sameCatS1D0==0 & fgmdata$sameDirection1S0D == 0,], mean)
+x = tmpdata_DC_SM$cuedAR
+y = tmpdata_DC_SM$uncuedAR
+z = tmpdata_DC_SM$response_error
+scatter3D(x, y, z, phi = 60, bty ="g",
+          main = "DC_SM", xlab = "cued_AR",
+          ylab ="uncued_AR", zlab = "response_error",
+          ticktype = "detailed",
+          col = ramp.col(c("red", "yellow", "green"))) # nice
+x = tmpdata_DC_DM$cuedAR
+y = tmpdata_DC_DM$uncuedAR
+z = tmpdata_DC_DM$response_error
+scatter3D(x, y, z, phi = 60, bty ="g",
+          main = "DC_DM", xlab = "cued_AR",
+          ylab ="uncued_AR", zlab = "response_error",
+          ticktype = "detailed",
+          col = ramp.col(c("red", "yellow", "green"))) # nice
+
+
 
 
 
